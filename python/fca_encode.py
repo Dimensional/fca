@@ -11,6 +11,14 @@ import struct
 import os
 from pathlib import Path
 
+# File type constants
+FILE_TYPE_UNKNOWN = 0
+FILE_TYPE_AMIIBO_V2 = 1
+FILE_TYPE_AMIIBO_V3 = 2
+FILE_TYPE_SKYLANDER = 3
+FILE_TYPE_DESTINY_INFINITY = 4
+FILE_TYPE_LEGO_DIMENSIONS = 5
+
 
 def encode_fca(input_dir, output_file):
     """
@@ -53,7 +61,7 @@ def encode_fca(input_dir, output_file):
                 content = file_content.read()
             
             # Calculate sizes
-            header_size = 2  # Version 1 header: 2 bytes (file type + purpose)
+            header_size = 2  # Version 1 header: 2 bytes (file type + reserved)
             embedded_size = len(content)
             total_size = 2 + header_size + embedded_size  # 2 bytes for header_size field
             
@@ -64,9 +72,10 @@ def encode_fca(input_dir, output_file):
             f.write(struct.pack('>H', header_size))
             
             # Write header bytes (version 1 format)
-            # Byte 0: File type (currently 0x00, to be defined later)
-            # Byte 1: Purpose (currently 0x00, to be defined later)
-            f.write(struct.pack('>BB', 0x00, 0x00))
+            # Byte 0: File type (0=Unknown, 1=amiibo v2, 2=amiibo v3, 3=Skylander, 4=Destiny Infinity, 5=Lego Dimensions)
+            # Byte 1: Reserved (must be 0x00)
+            file_type = FILE_TYPE_UNKNOWN  # Default to Unknown
+            f.write(struct.pack('>BB', file_type, 0x00))
             
             # Write embedded file content
             f.write(content)

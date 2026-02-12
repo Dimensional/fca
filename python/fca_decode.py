@@ -12,6 +12,29 @@ import os
 import hashlib
 from pathlib import Path
 
+# File type constants
+FILE_TYPE_UNKNOWN = 0
+FILE_TYPE_AMIIBO_V2 = 1
+FILE_TYPE_AMIIBO_V3 = 2
+FILE_TYPE_SKYLANDER = 3
+FILE_TYPE_DESTINY_INFINITY = 4
+FILE_TYPE_LEGO_DIMENSIONS = 5
+
+# File type names mapping
+FILE_TYPE_NAMES = {
+    FILE_TYPE_UNKNOWN: "Unknown",
+    FILE_TYPE_AMIIBO_V2: "amiibo v2",
+    FILE_TYPE_AMIIBO_V3: "amiibo v3",
+    FILE_TYPE_SKYLANDER: "Skylander",
+    FILE_TYPE_DESTINY_INFINITY: "Destiny Infinity",
+    FILE_TYPE_LEGO_DIMENSIONS: "Lego Dimensions",
+}
+
+
+def get_file_type_name(file_type):
+    """Get human-readable name for a file type."""
+    return FILE_TYPE_NAMES.get(file_type, f"Reserved ({file_type})")
+
 
 def decode_fca(input_file, output_dir):
     """
@@ -57,17 +80,20 @@ def decode_fca(input_file, output_dir):
             header_size = struct.unpack('>H', f.read(2))[0]
             
             # Read header bytes (if any)
+            file_type_name = "Unknown"
             if header_size > 0:
                 header_bytes = f.read(header_size)
                 if len(header_bytes) < header_size:
                     raise ValueError(f"Unexpected EOF while reading header for embedded file {file_count + 1}")
                 
-                # For version 1, header is 2 bytes: file_type (byte 0) and purpose (byte 1)
-                # Currently not used, but read for future compatibility
+                # For version 1, header is 2 bytes: file_type (byte 0) and reserved (byte 1)
                 if version == 1 and header_size == 2:
                     file_type = header_bytes[0]
-                    purpose = header_bytes[1]
-                    # Both bytes currently default to 0x00
+                    reserved = header_bytes[1]
+                    # Reserved byte must be 0x00
+                    if reserved != 0x00:
+                        print(f"Warning: Reserved byte is not 0x00 in embedded file {file_count + 1}")
+                    file_type_name = get_file_type_name(file_type)
             
             # Calculate embedded file size
             embedded_size = total_size - 2 - header_size
@@ -87,7 +113,10 @@ def decode_fca(input_file, output_dir):
                 out_file.write(content)
             
             file_count += 1
-            print(f"Extracted file {file_count}: {md5_hash} ({embedded_size} bytes)")
+            if version == 1 and header_size == 2:
+                print(f"Extracted file {file_count}: {md5_hash} ({embedded_size} bytes, type: {file_type_name})")
+            else:
+                print(f"Extracted file {file_count}: {md5_hash} ({embedded_size} bytes)")
     
     print(f"\nExtracted {file_count} files to: {output_path}")
 
