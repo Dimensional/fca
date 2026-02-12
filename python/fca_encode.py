@@ -10,15 +10,57 @@ import argparse
 import struct
 import os
 from pathlib import Path
+from constants import (
+    FILE_TYPE_UNKNOWN,
+    FILE_TYPE_AMIIBO_V2,
+    FILE_TYPE_AMIIBO_V3,
+    FILE_TYPE_SKYLANDER,
+    FILE_TYPE_DISNEY_INFINITY,
+    FILE_TYPE_LEGO_DIMENSIONS,
+)
 
-# File type constants
-FILE_TYPE_UNKNOWN = 0
-FILE_TYPE_AMIIBO_V2 = 1
-FILE_TYPE_AMIIBO_V3 = 2
-FILE_TYPE_SKYLANDER = 3
-FILE_TYPE_DESTINY_INFINITY = 4
-FILE_TYPE_LEGO_DIMENSIONS = 5
 
+def detect_file_type(content):
+    """Auto-detect file type based on size and content."""
+    size = len(content)
+
+    # Lego Dimensions detection
+    # Signature observed across all tested Lego Dimensions BIN files.
+    if size == 180:
+        if content[0] == 0x04 and content[7] == 0x80 and content[8:144] == (b'\x00' * 136):
+            return FILE_TYPE_LEGO_DIMENSIONS
+
+    # Disney Infinity detection
+    # Signature observed across all tested Disney Infinity BIN files.
+    if size == 320:
+        if (
+            content[0] == 0x04
+            and content[7:11] == b'\x89\x44\x00\xC2'
+            and content[54:57] == b'\x17\x87\x8E'
+        ):
+            return FILE_TYPE_DISNEY_INFINITY
+
+    # Skylanders detection
+    # Common signatures observed across 1024-byte and 2048-byte Skylanders BIN files.
+    if size in (1024, 2048):
+        if content[5:8] == b'\x81\x01\x0F' and content[54:58] == b'\x0F\x0F\x0F\x69':
+            return FILE_TYPE_SKYLANDER
+    
+    # Amiibo detection
+    if size in (532, 540, 572):
+        # Check for NTAG215 signature
+        # Byte 0x00C-0x00F: Capability Container (CC)
+        cc = content[0x0C:0x10]
+        if cc == b'\xF1\x10\xFF\xEE':  # NTAG215 CC
+            return FILE_TYPE_AMIIBO_V2
+    
+    elif size == 2048:
+        # NTAG I2C Plus 2K (Kirby)
+        cc = content[0x0C:0x10]
+        if cc == b'\xF1\x10\xFF\xEE':  # Check if amiibo-like
+            return FILE_TYPE_AMIIBO_V3
+    
+    return FILE_TYPE_UNKNOWN
 
 def encode_fca(input_dir, output_file):
     """
@@ -72,9 +114,11 @@ def encode_fca(input_dir, output_file):
             f.write(struct.pack('>H', header_size))
             
             # Write header bytes (version 1 format)
-            # Byte 0: File type (0=Unknown, 1=amiibo v2, 2=amiibo v3, 3=Skylander, 4=Destiny Infinity, 5=Lego Dimensions)
+            # Byte 0: File type (0=Unknown, 1=amiibo v2, 2=amiibo v3, 3=Skylander, 4=Disney Infinity, 5=Lego Dimensions)
             # Byte 1: Reserved (must be 0x00)
-            file_type = FILE_TYPE_UNKNOWN  # Default to Unknown
+    
+            # Auto-detect file type
+            file_type = detect_file_type(content)
             f.write(struct.pack('>BB', file_type, 0x00))
             
             # Write embedded file content
