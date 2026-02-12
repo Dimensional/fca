@@ -31,4 +31,4 @@ FCA files (`.fca` extension) consist of:
 - A global header with magic bytes "FCA" and a version number
 - One or more embedded files, each with version-dependent headers containing file type and metadata
 
-See [fca-spec.md](fca-spec.md) for the complete format specification.
+See [SPEC.md](SPEC.md) for the complete format specification.
