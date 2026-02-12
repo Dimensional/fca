@@ -20,6 +20,28 @@ FILE_TYPE_DESTINY_INFINITY = 4
 FILE_TYPE_LEGO_DIMENSIONS = 5
 
 
+def detect_file_type(file_path, content):
+    """Auto-detect file type based on size and content."""
+    size = len(content)
+    
+    # Amiibo detection
+    if size == 540:
+        # Check for NTAG215 signature
+        # Byte 0x00C-0x00F: Capability Container (CC)
+        if len(content) >= 0x10:
+            cc = content[0x0C:0x10]
+            if cc == b'\xF1\x10\xFF\xEE':  # NTAG215 CC
+                return FILE_TYPE_AMIIBO_V2
+    
+    elif size == 2048:
+        # NTAG I2C Plus 2K (Kirby)
+        if len(content) >= 0x10:
+            cc = content[0x0C:0x10]
+            if cc == b'\xF1\x10\xFF\xEE':  # Check if amiibo-like
+                return FILE_TYPE_AMIIBO_V3
+    
+    return FILE_TYPE_UNKNOWN
+
 def encode_fca(input_dir, output_file):
     """
     Recursively concatenate all files in input_dir into an FCA archive.
@@ -74,7 +96,9 @@ def encode_fca(input_dir, output_file):
             # Write header bytes (version 1 format)
             # Byte 0: File type (0=Unknown, 1=amiibo v2, 2=amiibo v3, 3=Skylander, 4=Destiny Infinity, 5=Lego Dimensions)
             # Byte 1: Reserved (must be 0x00)
-            file_type = FILE_TYPE_UNKNOWN  # Default to Unknown
+    
+            # Auto-detect file type
+            file_type = detect_file_type(file_path, content)
             f.write(struct.pack('>BB', file_type, 0x00))
             
             # Write embedded file content
