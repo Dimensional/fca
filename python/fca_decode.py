@@ -11,14 +11,14 @@ import struct
 import os
 import hashlib
 from pathlib import Path
-
-# File type constants
-FILE_TYPE_UNKNOWN = 0
-FILE_TYPE_AMIIBO_V2 = 1
-FILE_TYPE_AMIIBO_V3 = 2
-FILE_TYPE_SKYLANDER = 3
-FILE_TYPE_DESTINY_INFINITY = 4
-FILE_TYPE_LEGO_DIMENSIONS = 5
+from constants import (
+    FILE_TYPE_UNKNOWN,
+    FILE_TYPE_AMIIBO_V2,
+    FILE_TYPE_AMIIBO_V3,
+    FILE_TYPE_SKYLANDER,
+    FILE_TYPE_DISNEY_INFINITY,
+    FILE_TYPE_LEGO_DIMENSIONS,
+)
 
 # File type names mapping
 FILE_TYPE_NAMES = {
@@ -26,7 +26,7 @@ FILE_TYPE_NAMES = {
     FILE_TYPE_AMIIBO_V2: "amiibo v2",
     FILE_TYPE_AMIIBO_V3: "amiibo v3",
     FILE_TYPE_SKYLANDER: "Skylander",
-    FILE_TYPE_DESTINY_INFINITY: "Destiny Infinity",
+    FILE_TYPE_DISNEY_INFINITY: "Disney Infinity",
     FILE_TYPE_LEGO_DIMENSIONS: "Lego Dimensions",
 }
 
