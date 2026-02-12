@@ -20,7 +20,7 @@ from constants import (
 )
 
 
-def detect_file_type(file_path, content):
+def detect_file_type(content):
     """Auto-detect file type based on size and content."""
     size = len(content)
 
@@ -47,7 +47,7 @@ def detect_file_type(file_path, content):
             return FILE_TYPE_SKYLANDER
     
     # Amiibo detection
-    if size == 532:
+    if size in (532, 540, 572):
         # Check for NTAG215 signature
         # Byte 0x00C-0x00F: Capability Container (CC)
         cc = content[0x0C:0x10]
@@ -114,11 +114,11 @@ def encode_fca(input_dir, output_file):
             f.write(struct.pack('>H', header_size))
             
             # Write header bytes (version 1 format)
-            # Byte 0: File type (0=Unknown, 1=amiibo v2, 2=amiibo v3, 3=Skylander, 4=Destiny Infinity, 5=Lego Dimensions)
+            # Byte 0: File type (0=Unknown, 1=amiibo v2, 2=amiibo v3, 3=Skylander, 4=Disney Infinity, 5=Lego Dimensions)
             # Byte 1: Reserved (must be 0x00)
     
             # Auto-detect file type
-            file_type = detect_file_type(file_path, content)
+            file_type = detect_file_type(content)
             f.write(struct.pack('>BB', file_type, 0x00))
             
             # Write embedded file content
