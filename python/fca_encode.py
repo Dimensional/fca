@@ -3,7 +3,7 @@
 FCA Encoder - Creates FCA archives from directory contents.
 
 Usage:
-    python fca_encode.py --output-file <file> --input-dirs <dir1> [<dir2> ...]
+    python fca_encode.py --output-file <file> --input-dirs <dir1> [<dir2> ...] [--exclude-pattern <string>]
 """
 
 import argparse
@@ -62,13 +62,14 @@ def detect_file_type(content):
     
     return FILE_TYPE_UNKNOWN
 
-def encode_fca(input_dirs, output_file):
+def encode_fca(input_dirs, output_file, exclude_pattern=None):
     """
     Recursively concatenate all files from input_dirs into an FCA archive.
     
     Args:
         input_dirs: Paths to input directories
         output_file: Path to output FCA file
+        exclude_pattern: If set, any file whose relative path contains this string is excluded
     """
     output_path = Path(output_file)
     
@@ -88,6 +89,13 @@ def encode_fca(input_dirs, output_file):
                 if filename.startswith('.'):
                     continue
                 file_path = Path(root) / filename
+                if exclude_pattern is not None:
+                    try:
+                        rel = file_path.relative_to(input_path)
+                    except ValueError:
+                        rel = file_path
+                    if exclude_pattern in str(rel):
+                        continue
                 files.append(file_path)
     
     # Sort files for consistent output
@@ -149,11 +157,17 @@ def main():
         metavar='<dir>',
         help='Input directory(ies) containing files to archive'
     )
+    parser.add_argument(
+        '--exclude-pattern',
+        default=None,
+        metavar='<string>',
+        help='Exclude any file whose relative path contains this string'
+    )
     
     args = parser.parse_args()
     
     try:
-        encode_fca(args.input_dirs, args.output_file)
+        encode_fca(args.input_dirs, args.output_file, exclude_pattern=args.exclude_pattern)
     except Exception as e:
         print(f"Error: {e}", file=os.sys.stderr)
         os.sys.exit(1)
