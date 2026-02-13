@@ -79,10 +79,14 @@ def encode_fca(input_dir, output_file):
     # Ensure output directory exists
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
-    # Collect all files recursively
+    # Collect all files recursively (skip hidden files and directories)
     files = []
     for root, dirs, filenames in os.walk(input_path):
+        # Don't descend into hidden directories
+        dirs[:] = [d for d in dirs if not d.startswith('.')]
         for filename in filenames:
+            if filename.startswith('.'):
+                continue
             file_path = Path(root) / filename
             files.append(file_path)
     

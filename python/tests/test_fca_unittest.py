@@ -86,7 +86,7 @@ class TestFCAEncode(unittest.TestCase):
         self.assertTrue(output_file.exists())
         
         # Count files in test_data directory (recursively)
-        file_count = sum(1 for _ in self.test_data_dir.rglob('*') if _.is_file())
+        file_count = sum(1 for _ in self.test_data_dir.rglob('*') if _.is_file() and not _.name.startswith('.'))
         
         # Verify file format and count embedded files
         with open(output_file, 'rb') as f:
@@ -212,8 +212,7 @@ class TestFCADecode(unittest.TestCase):
         decode_fca(str(fca_file), str(output_dir))
         
         # Count files in test_data
-        test_files = list(self.test_data_dir.rglob('*'))
-        test_files = [f for f in test_files if f.is_file()]
+        test_files = [f for f in self.test_data_dir.rglob('*') if f.is_file() and not f.name.startswith('.')]
         
         # Verify all files were extracted
         extracted_files = list(output_dir.iterdir())
@@ -316,7 +315,7 @@ class TestFCARoundTrip(unittest.TestCase):
         
         # Verify all files match
         for test_file in self.test_data_dir.rglob('*'):
-            if not test_file.is_file():
+            if not test_file.is_file() or test_file.name.startswith('.'):
                 continue
             
             with open(test_file, 'rb') as f:
