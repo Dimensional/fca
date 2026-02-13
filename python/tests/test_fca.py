@@ -177,6 +177,7 @@ class TestFCAEncode:
                 
                 total_size = struct.unpack('>I', total_size_bytes)[0]
                 header_size = struct.unpack('>H', f.read(2))[0]
+                f.read(header_size)  # consume header bytes
                 embedded_size = total_size - 2 - header_size
                 content = f.read(embedded_size)
                 
@@ -459,8 +460,11 @@ class TestFCAFormat:
     
     def test_big_endian_encoding(self, temp_dir, test_data_dir):
         """Test that multi-byte integers are big-endian."""
+        single_file_dir = Path(temp_dir) / 'single_file'
+        single_file_dir.mkdir()
+        shutil.copy(test_data_dir / 'file1.txt', single_file_dir / 'file1.txt')
         output_file = Path(temp_dir) / 'output.fca'
-        encode_fca([str(test_data_dir / 'file1.txt')], str(output_file))
+        encode_fca([str(single_file_dir)], str(output_file))
         
         with open(output_file, 'rb') as f:
             f.read(4)  # Skip magic + version
