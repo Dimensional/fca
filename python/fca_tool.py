@@ -4,6 +4,8 @@ FCA Tool - Unified encoder/decoder CLI and GUI.
 
 CLI usage:
     python fca_tool.py encode --output-file <file> --input-files <file1> [<file2> ...]
+    python fca_tool.py encode --output-file <file> --input-dirs <dir1> [<dir2> ...]
+    (Use exactly one of --input-files or --input-dirs for encoding)
     python fca_tool.py decode --input-file <file> --output-dir <dir>
     python fca_tool.py --gui
 
@@ -327,17 +329,18 @@ def main():
         metavar="<file>",
         help="Output FCA file path",
     )
-    encode_parser.add_argument(
+    encode_input_group = encode_parser.add_mutually_exclusive_group(required=True)
+    encode_input_group.add_argument(
         "--input-files",
         nargs="+",
         metavar="<file>",
-        help="Input file(s) to include in the archive",
+        help="Input file(s) to include in the archive (mutually exclusive with --input-dirs)",
     )
-    encode_parser.add_argument(
+    encode_input_group.add_argument(
         "--input-dirs",
         nargs="+",
         metavar="<dir>",
-        help="Input directory(ies) to search recursively for files",
+        help="Input directory(ies) to search recursively for files (mutually exclusive with --input-files)",
     )
 
     decode_parser = subparsers.add_parser("decode", help="Extract files from FCA archive")
@@ -362,8 +365,6 @@ def main():
 
     try:
         if args.command == "encode":
-            if not args.input_files and not args.input_dirs:
-                raise ValueError("Provide at least one of --input-files or --input-dirs")
             encode_fca_from_sources(
                 output_file=args.output_file,
                 input_files=args.input_files,
