@@ -144,6 +144,16 @@ def run_gui():
     root.geometry("760x500")
     apply_window_icon(root)
 
+    # Create menu bar
+    menubar = tk.Menu(root)
+    root.config(menu=menubar)
+
+    # File menu
+    file_menu = tk.Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="File", menu=file_menu)
+    file_menu.add_command(label="Exit", command=root.quit)
+
+
     notebook = ttk.Notebook(root)
     notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -289,9 +299,88 @@ def run_gui():
 
     ttk.Button(decode_output_frame, text="Browse", command=choose_decode_output).pack(side=tk.LEFT, padx=(6, 0), pady=(4, 0))
 
+    # Database status frame
+    db_status_frame = ttk.Frame(decode_tab)
+    db_status_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
+    
+    def check_database_status():
+        """Check if amiibo database exists and return status."""
+        db_path = Path(__file__).parent / "amiibo_database.json"
+        if db_path.is_file():
+            return True, str(db_path)
+        return False, str(db_path)
+    
+    def update_db_status():
+        """Update the database status label color and text."""
+        exists, db_path = check_database_status()
+        if exists:
+            db_status_var.set("✓ Amiibo database loaded")
+            db_status_label.config(foreground="green")
+        else:
+            db_status_var.set("✗ Amiibo database not found - Download required")
+            db_status_label.config(foreground="red")
+    
+    def download_database_gui():
+        """Download amiibo database from API and save locally."""
+        status_var.set("Downloading amiibo database...")
+        root.update()
+        
+        try:
+            import requests
+            db_path = Path(__file__).parent / "amiibo_database.json"
+            
+            print(f"Downloading amiibo database from amiiboapi.org...")
+            url = "https://amiiboapi.org/api/amiibo/"
+            response = requests.get(url, timeout=30)
+            
+            if response.status_code != 200:
+                status_var.set("Download failed")
+                messagebox.showerror("Database Download", f"API error: {response.status_code}")
+                return
+            
+            data = response.json()
+            amiibo_list = data.get("amiibo", [])
+            
+            if not amiibo_list:
+                status_var.set("Download failed")
+                messagebox.showerror("Database Download", "No amiibo data received")
+                return
+            
+            # Save to file
+            with open(db_path, 'w', encoding='utf-8') as f:
+                import json
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            status_var.set(f"✓ Downloaded {len(amiibo_list)} amiibo entries")
+            messagebox.showinfo("Database Download", f"Successfully downloaded {len(amiibo_list)} amiibo entries\nSaved to: {db_path}")
+            update_db_status()
+        
+        except Exception as e:
+            status_var.set("Download failed")
+            messagebox.showerror("Database Download", f"Error: {e}")
+    
+    db_status_var = tk.StringVar()
+    db_status_label = ttk.Label(db_status_frame, textvariable=db_status_var, anchor="w")
+    db_status_label.pack(anchor="w", pady=(0, 4))
+    
+    db_button_frame = ttk.Frame(decode_tab)
+    db_button_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
+    ttk.Button(db_button_frame, text="Download Amiibo Database", command=download_database_gui).pack(anchor="w")
+    
+    # Initial status check
+    update_db_status()
+
+    # Options frame for decode
+    options_frame = ttk.Frame(decode_tab)
+    options_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
+
+    pro_names_var = tk.BooleanVar(value=False)
+    ttk.Checkbutton(options_frame, text="Pro file names (no extensions)", variable=pro_names_var).pack(anchor="w")
+
     def decode_from_gui():
         input_file = decode_input_var.get().strip()
         output_dir = decode_output_var.get().strip()
+        pro_names = pro_names_var.get()
 
         if not input_file:
             messagebox.showerror("Decode", "Please choose an input FCA file.")
@@ -301,7 +390,7 @@ def run_gui():
             return
 
         try:
-            decode_fca(input_file, output_dir)
+            decode_fca(input_file, output_dir, use_pro_names=pro_names)
             status_var.set(f"Extracted files to: {output_dir}")
             messagebox.showinfo("Decode", f"Archive extracted successfully:\n{output_dir}")
         except Exception as e:
@@ -356,6 +445,11 @@ def main():
         metavar="<dir>",
         help="Output directory for extracted files",
     )
+    decode_parser.add_argument(
+        "--pro-names",
+        action="store_true",
+        help="Use Pro file names (no extensions) for amiibo files",
+    )
 
     args = parser.parse_args()
 
@@ -371,7 +465,7 @@ def main():
                 input_dirs=args.input_dirs,
             )
         elif args.command == "decode":
-            decode_fca(args.input_file, args.output_dir)
+            decode_fca(args.input_file, args.output_dir, use_pro_names=args.pro_names)
         else:
             parser.print_help()
             os.sys.exit(1)
