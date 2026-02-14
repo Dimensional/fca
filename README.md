@@ -2,6 +2,8 @@
 
 A flexible container format for embedding multiple files within a single archive file. The FCA format supports version-specific header formats, allowing for extensibility and future enhancements.
 
+![](/fca-icon-256.png)
+
 ## Purpose
 
 The Flexible Concatenated Archive (FCA) format is designed to efficiently store and organize multiple embedded files within a single archive. It is optimized for use on extremely low-resource devices, making it ideal for embedded systems, IoT devices, and other constrained environments where memory and processing power are limited.
