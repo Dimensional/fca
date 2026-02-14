@@ -28,7 +28,7 @@ def convert_png_to_ico(input_file, output_file):
 def main():
     parser = argparse.ArgumentParser(description="Convert PNG to ICO")
     parser.add_argument("--input-file", required=True, metavar="<file>", help="Input PNG path")
-    parser.add_argument("--output-file", required=True, metavar="<file>", help="Output ICO path")
+    parser.add_argument("--output-file", required=False, metavar="<file>", help="Output ICO path", default="small-logo.ico")
     args = parser.parse_args()
 
     try:
