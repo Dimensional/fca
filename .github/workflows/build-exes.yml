@@ -119,7 +119,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           files: dist/windows-x64/*
           generate_release_notes: false
-          allow_updates: true
+          overwrite_files: true
           make_latest: true
           fail_on_unmatched_files: true
         env:
