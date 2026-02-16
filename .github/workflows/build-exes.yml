@@ -106,6 +106,7 @@ jobs:
             | xargs -r -I {} gh release delete-asset rolling "{}" -y
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
 
       - name: Create or update rolling release and upload assets
         uses: softprops/action-gh-release@v2
