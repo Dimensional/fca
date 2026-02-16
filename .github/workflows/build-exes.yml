@@ -3,7 +3,7 @@ name: Build Windows EXEs
 on:
   push:
     branches:
-      - dev
+      - develop
   pull_request:
   workflow_dispatch:
 
@@ -86,7 +86,7 @@ jobs:
 
   release:
     name: Publish Rolling Release
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/develop'
     needs: build-windows-x64
     runs-on: ubuntu-latest
     permissions:
@@ -124,6 +124,7 @@ jobs:
           files: dist/windows-x64/*
           generate_release_notes: false
           overwrite_files: true
+          prerelease: true
           make_latest: true
           fail_on_unmatched_files: true
         env:
